@@ -56,6 +56,7 @@ if __name__ == '__main__':
     # User-friendly name, import name, pip specification.
     requiredModules = [
         ['requests', 'requests', 'requests >= 2.0.0, < 3.0.0'],
+        ['clint', 'clint', 'clint >= 0.3.0, < 0.4.0'],
         ['Beautiful Soup 4', 'bs4', 'beautifulsoup4 >= 4.4.0, < 5.0.0']
     ]
 
@@ -120,6 +121,7 @@ if __name__ == '__main__':
 
 import requests
 from bs4 import BeautifulSoup
+from clint.textui import progress
 
 BASE_URL = 'https://downloads.khinsider.com/'
 
@@ -439,9 +441,14 @@ class File(object):
     
     def download(self, path):
         """Download the file to `path`."""
-        response = requests.get(self.url, timeout=10)
+        #QWERIOP TODO
+        response = requests.get(self.url, timeout=10, stream=True)
         with open(path, 'wb') as outFile:
-            outFile.write(response.content)
+            total_length = int(response.headers.get('content-length'))
+            for chunk in progress.bar(response.iter_content(chunk_size=1024), expected_size=(total_length/1024) + 1): 
+                if chunk:
+                    outFile.write(chunk)
+                    outFile.flush()
 
 
 def download(soundtrackId, path='', makeDirs=True, formatOrder=None, verbose=False):
