@@ -7,6 +7,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import math
 import os
 import re
 import sys
@@ -219,7 +220,7 @@ def friendlyDownloadFile(file, path, index, total, verbose=False):
     if not os.path.exists(path):
         if verbose:
             unicodePrint("Downloading {}: {}{}...".format(numberStr, filename, byTheWay))
-        for triesElapsed in range(3):
+        for triesElapsed in range(10):
             if verbose and triesElapsed:
                 unicodePrint("Couldn't download {}. Trying again...".format(filename), file=sys.stderr)
             try:
@@ -231,6 +232,8 @@ def friendlyDownloadFile(file, path, index, total, verbose=False):
         else:
             if verbose:
                 unicodePrint("Couldn't download {}. Skipping over.".format(filename), file=sys.stderr)
+                with open(path+".failed", 'wb') as f:
+                    f.write("failed to download")
             return False
     else:
         if verbose:
@@ -356,11 +359,12 @@ class Soundtrack(object):
         if verbose and not self._isLoaded('songs'):
             print("Getting song list...")
         files = []
-        for song in self.songs:
-            try:
-                files.append(getAppropriateFile(song, formatOrder))
-            except NonexistentSongError:
-                files.append(None)
+        songsCount = len(self.songs)
+        for (index, song) in enumerate(self.songs):
+            files.append(getAppropriateFile(song, formatOrder))
+            if verbose:
+                print("\r{}/{}".format(index+1, songsCount), end="")
+        print()
         files.extend(self.images)
         totalFiles = len(files)
 
@@ -393,7 +397,7 @@ class Song(object):
     
     @lazyProperty
     def _soup(self):
-        r = requests.get(self.url, timeout=10)
+        r = requests.get(self.url, timeout=100)
         if r.url.rsplit('/', 1)[-1] == '404':
             raise NonexistentSongError("Nonexistent song page (404).")
         return getSoup(self.url)
@@ -441,11 +445,11 @@ class File(object):
     
     def download(self, path):
         """Download the file to `path`."""
-        #QWERIOP TODO
-        response = requests.get(self.url, timeout=10, stream=True)
+        #QWERIOP
+        response = requests.get(self.url, timeout=100, stream=True)
         with open(path, 'wb') as outFile:
             total_length = int(response.headers.get('content-length'))
-            for chunk in progress.bar(response.iter_content(chunk_size=1024), expected_size=(total_length/1024) + 1): 
+            for chunk in progress.bar(response.iter_content(chunk_size=math.floor(total_length/100)), expected_size=100): 
                 if chunk:
                     outFile.write(chunk)
                     outFile.flush()

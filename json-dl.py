@@ -3,6 +3,8 @@ import khinsider, json
 f = open('music.json')
 def dl(ost, fmt):
     khinsider.download(ost,ost,True,[fmt],True)
+    with open('downloaded.txt', 'a') as f:
+        f.write(i + '\n')
 try:
     data = json.load(f)
 except:
