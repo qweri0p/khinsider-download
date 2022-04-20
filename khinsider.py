@@ -16,7 +16,8 @@ from functools import wraps
 try:
     from urllib.parse import unquote, urljoin, urlsplit
 except ImportError: # Python 2
-    from urlparse import unquote, urljoin, urlsplit
+    print('Python 2 support is deprecated. Please upgrade to Python 3.')
+    sys.exit()
 
 try: # Python 2
     from os import getcwdu as getcwd
@@ -449,7 +450,7 @@ class File(object):
         response = requests.get(self.url, timeout=100, stream=True)
         with open(path, 'wb') as outFile:
             total_length = int(response.headers.get('content-length'))
-            for chunk in progress.bar(response.iter_content(chunk_size=math.floor(total_length/100)), expected_size=100): 
+            for chunk in progress.bar(response.iter_content(chunk_size=math.floor(total_length/99)), expected_size=100): 
                 if chunk:
                     outFile.write(chunk)
                     outFile.flush()
